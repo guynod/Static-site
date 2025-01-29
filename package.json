@@ -1,17 +1,15 @@
 {
   "name": "static-site",
   "version": "1.0.0",
-  "main": "server.js",
+  "main": "server-dist.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
     "build": "node build.js",
-    "serve-dist": "node server-dist.js"
+    "start": "node server-dist.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Static site generator with markdown support",
   "dependencies": {
     "express": "^4.21.2",
     "marked": "^15.0.6"

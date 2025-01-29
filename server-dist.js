@@ -7,9 +7,9 @@ const PORT = process.env.PORT || 3000;
 // Serve static files from dist directory
 app.use(express.static('dist'));
 
-// Serve index.html for all routes
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+// For any route not found in static files, serve a 404 message
+app.use((req, res) => {
+    res.status(404).send('Page not found');
 });
 
 app.listen(PORT, () => {

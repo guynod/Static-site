@@ -1,3 +1,9 @@
+// Simple script for static site
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Static site loaded');
+    // Add any future enhancements here
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     // Handle navigation
     document.querySelectorAll('nav a').forEach(link => {

@@ -17,7 +17,6 @@ async function processMarkdown(src, dest) {
         await fs.mkdir(path.dirname(dest), { recursive: true });
         const content = await fs.readFile(src, 'utf-8');
         const html = marked(content);
-        // We'll wrap the HTML in a template
         const template = await fs.readFile('src/template.html', 'utf-8');
         const finalHtml = template.replace('{{content}}', html);
         await fs.writeFile(dest, finalHtml);
@@ -33,14 +32,15 @@ async function build() {
     await fs.mkdir('dist', { recursive: true });
 
     // Copy static assets
-    await copyFile('src/index.html', 'dist/index.html');
-    await copyFile('src/js/main.js', 'dist/js/main.js');
     await copyFile('src/css/styles.css', 'dist/css/styles.css');
+
+    // Process home page
+    await processMarkdown('src/pages/home.md', 'dist/index.html');
 
     // Process markdown files
     const pages = await fs.readdir('src/pages');
     for (const page of pages) {
-        if (page.endsWith('.md')) {
+        if (page.endsWith('.md') && page !== 'home.md') {
             const htmlPath = path.join('dist', 'pages', page.replace('.md', '.html'));
             await processMarkdown(path.join('src/pages', page), htmlPath);
         }
@@ -58,4 +58,4 @@ async function build() {
     console.log('Build completed!');
 }
 
-build().catch(console.error); 
+build().catch(console.error);
