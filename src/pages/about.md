@@ -1,6 +1,6 @@
 # About Me
 
-Welcome to my corner of the internet! I'm passionate about creating and sharing interesting content.
+Hi, my name is Guy.  Welcome to my corner of the internet! I'm passionate about creating and sharing interesting content.
 
 ## What I Do
 
