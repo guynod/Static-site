@@ -33,9 +33,7 @@ async function build() {
 
     // Copy static assets
     await copyFile('src/css/styles.css', 'dist/css/styles.css');
-
-    // Process home page
-    await processMarkdown('src/pages/home.md', 'dist/index.html');
+    await copyFile('src/index.html', 'dist/index.html');
 
     // Process markdown files
     const pages = await fs.readdir('src/pages');
