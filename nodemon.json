@@ -1,6 +1,6 @@
 {
-    "watch": ["src/"],
-    "ext": "md,html,css",
+    "watch": ["src/", "build.js", "server-dist.js"],
+    "ext": "html,css,js,md",
     "ignore": ["dist/", "node_modules/"],
-    "exec": "npm run build"
+    "delay": "500"
 } 

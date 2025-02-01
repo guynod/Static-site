@@ -6,7 +6,9 @@
     "build": "node build.js",
     "start": "node server-dist.js",
     "serve-dist": "node server-dist.js",
-    "watch": "nodemon"
+    "watch-build": "nodemon build.js",
+    "watch-server": "nodemon server-dist.js",
+    "dev": "concurrently \"npm run watch-build\" \"npm run watch-server\""
   },
   "keywords": [],
   "author": "",
@@ -17,6 +19,7 @@
     "marked": "^15.0.6"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "concurrently": "^8.2.2"
   }
 }
