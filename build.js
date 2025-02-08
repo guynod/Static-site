@@ -102,6 +102,15 @@ function generateBlogContent(posts) {
     </div>`;
 }
 
+async function loadTemplate(templatePath) {
+    try {
+        return await fs.readFile(templatePath, 'utf-8');
+    } catch (error) {
+        console.error(`Error loading template ${templatePath}:`, error);
+        return '';
+    }
+}
+
 async function processMarkdown(src, dest, template, data = {}) {
     try {
         await fs.mkdir(path.dirname(dest), { recursive: true });
@@ -116,14 +125,26 @@ async function processMarkdown(src, dest, template, data = {}) {
         
         const html = marked(processedContent);
         const templateContent = await fs.readFile(template || 'src/template.html', 'utf-8');
-        let finalHtml = templateContent.replace('{{{content}}}', html);
+        
+        // Load header and footer templates
+        const headerContent = await loadTemplate('src/templates/header.html');
+        const footerContent = await loadTemplate('src/templates/footer.html');
+        
+        // Replace content and templates
+        let finalHtml = templateContent
+            .replace('{{header}}', headerContent)
+            .replace('{{{content}}}', html)
+            .replace('{{footer}}', footerContent);
         
         // Replace metadata in template
         Object.entries(metadata).forEach(([key, value]) => {
             if (typeof value === 'string') {
-                finalHtml = finalHtml.replace(`{{${key}}}`, value);
+                finalHtml = finalHtml.replace(new RegExp(`{{${key}}}`, 'g'), value);
             }
         });
+        
+        // Set default title if not provided
+        finalHtml = finalHtml.replace(/{{title}}/g, metadata.title || 'Guy Margalith');
         
         await fs.writeFile(dest, finalHtml);
         console.log(`Processed: ${src} -> ${dest}`);
