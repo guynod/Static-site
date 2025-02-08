@@ -11,62 +11,33 @@ async function ensureDir(dirPath) {
     }
 }
 
-async function copyFile(src, dest) {
+// Helper function to copy directory
+async function copyDir(src, dest) {
     try {
-        await fs.mkdir(path.dirname(dest), { recursive: true });
-        await fs.copyFile(src, dest);
-        console.log(`Copied: ${src} -> ${dest}`);
-    } catch (error) {
-        console.error(`Error copying ${src}:`, error);
-    }
-}
-
-async function copyFileIfExists(src, dest) {
-    try {
-        await fs.access(src);
-        await fs.copyFile(src, dest);
-        console.log(`Copied: ${src} -> ${dest}`);
-    } catch (error) {
-        if (error.code === 'ENOENT') {
-            // File doesn't exist, skip silently
-            return;
-        }
-        throw error;
-    }
-}
-
-function parseFrontMatter(content) {
-    const frontMatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
-    const match = content.match(frontMatterRegex);
-    
-    if (!match) return { content };
-    
-    const frontMatter = match[1];
-    const markdownContent = match[2];
-    
-    const metadata = {};
-    frontMatter.split('\n').forEach(line => {
-        const [key, ...values] = line.split(':');
-        if (key && values.length) {
-            let value = values.join(':').trim();
-            // Handle arrays in front matter
-            if (value.startsWith('[') && value.endsWith(']')) {
-                value = value.slice(1, -1).split(',').map(item => item.trim());
+        await ensureDir(dest);
+        const entries = await fs.readdir(src, { withFileTypes: true });
+        
+        for (let entry of entries) {
+            const srcPath = path.join(src, entry.name);
+            const destPath = path.join(dest, entry.name);
+            
+            if (entry.isDirectory()) {
+                await copyDir(srcPath, destPath);
+            } else {
+                await fs.copyFile(srcPath, destPath);
+                console.log(`Copied: ${srcPath} -> ${destPath}`);
             }
-            metadata[key.trim()] = value;
         }
-    });
-    
-    return {
-        ...metadata,
-        content: markdownContent
-    };
+    } catch (error) {
+        console.error(`Error copying directory ${src}:`, error);
+    }
 }
 
 function formatDate(dateStr) {
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', {
         year: 'numeric',
-        month: 'long',
+        month: 'short',
         day: 'numeric'
     });
 }
@@ -102,33 +73,89 @@ function generateBlogContent(posts) {
     </div>`;
 }
 
+async function parseFrontMatter(content) {
+    const frontMatterRegex = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/;
+    const match = content.match(frontMatterRegex);
+    
+    if (!match) return { content };
+    
+    const frontMatter = match[1];
+    const markdownContent = match[2];
+    
+    const metadata = {};
+    frontMatter.split('\n').forEach(line => {
+        const [key, ...values] = line.split(':');
+        if (key && values.length) {
+            metadata[key.trim()] = values.join(':').trim();
+        }
+    });
+    
+    return { ...metadata, content: markdownContent };
+}
+
 async function processMarkdown(src, dest, template, data = {}) {
     try {
-        await fs.mkdir(path.dirname(dest), { recursive: true });
+        await ensureDir(path.dirname(dest));
         const content = await fs.readFile(src, 'utf-8');
-        const { content: markdownContent, ...metadata } = parseFrontMatter(content);
+        const { content: markdownContent, ...metadata } = await parseFrontMatter(content);
         
-        // Replace blog_content placeholder if it exists
-        let processedContent = markdownContent;
-        if (data.blog_content) {
-            processedContent = markdownContent.replace('{{blog_content}}', data.blog_content);
-        }
-        
-        const html = marked(processedContent);
-        const templateContent = await fs.readFile(template || 'src/template.html', 'utf-8');
-        let finalHtml = templateContent.replace('{{{content}}}', html);
-        
-        // Replace metadata in template
-        Object.entries(metadata).forEach(([key, value]) => {
-            if (typeof value === 'string') {
-                finalHtml = finalHtml.replace(`{{${key}}}`, value);
-            }
+        // Configure marked to allow HTML
+        marked.setOptions({
+            headerIds: false,
+            mangle: false,
+            headerPrefix: '',
+            gfm: true,
+            breaks: true,
+            sanitize: false,
+            smartLists: true,
+            smartypants: true,
+            xhtml: false
         });
         
+        let processedContent = markdownContent;
+        if (data.blog_content) {
+            // Replace the placeholder with the blog content before processing markdown
+            processedContent = processedContent.replace('{{blog_content}}', data.blog_content);
+        }
+        
+        // Process the markdown content first
+        const htmlContent = marked(processedContent);
+        
+        // For blog posts, wrap the content in article structure
+        let finalContent = htmlContent;
+        if (src.includes('/posts/') && !data.blog_content) {
+            const date = formatDate(metadata.date);
+            finalContent = `<article class="post">
+                <header class="post-header">
+                    <h1 class="post-title">${metadata.title}</h1>
+                    <time class="post-meta" datetime="${metadata.date}">${date}</time>
+                </header>
+                <div class="post-content">
+                    ${htmlContent}
+                </div>
+            </article>`;
+        }
+        
+        // Read and process the template
+        const templateContent = await fs.readFile(template || 'src/template.html', 'utf-8');
+        
+        // Replace content and metadata in the template
+        let finalHtml = templateContent
+            .replace('{{{content}}}', finalContent)
+            .replace('{{title}}', metadata.title || '')
+            .replace('<title>Guy Margalith</title>', `<title>${metadata.title || 'Guy Margalith'}</title>`);
+        
+        // Write the final HTML
         await fs.writeFile(dest, finalHtml);
         console.log(`Processed: ${src} -> ${dest}`);
         
-        return { ...metadata, html, url: dest.replace('dist', '') };
+        // Return metadata and URL for blog index
+        return {
+            ...metadata,
+            excerpt: metadata.excerpt || '',
+            url: dest.replace('dist', ''),
+            html: finalContent
+        };
     } catch (error) {
         console.error(`Error processing ${src}:`, error);
         return null;
@@ -146,9 +173,9 @@ async function build() {
         await ensureDir('dist/pages');
         
         // Copy static assets
-        await copyFileIfExists('src/images/placeholder.svg', 'dist/images/placeholder.svg');
-        await copyFileIfExists('src/css/styles.css', 'dist/css/styles.css');
-        await copyFileIfExists('src/index.html', 'dist/index.html');
+        await fs.copyFile('src/images/placeholder.svg', 'dist/images/placeholder.svg');
+        await fs.copyFile('src/css/styles.css', 'dist/css/styles.css');
+        await fs.copyFile('src/index.html', 'dist/index.html');
         
         // Process blog posts
         const blogPosts = [];
@@ -199,4 +226,4 @@ async function build() {
     }
 }
 
-build();
+build(); 

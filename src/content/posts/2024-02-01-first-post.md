@@ -1,19 +1,9 @@
 ---
-title: My First Blog Post
+title: The Future of Web Development
 date: 2024-02-01
-excerpt: Welcome to my first blog post! Here I'll share my thoughts and experiences.
+excerpt: Exploring the latest trends and technologies shaping the future of web development.
 ---
 
-# Welcome to My Blog!
+# The Future of Web Development
 
-This is my first blog post. I'm excited to share my thoughts and experiences with you.
-
-## What to Expect
-
-I'll be writing about various topics including:
-- Web Development
-- Technology
-- Personal Projects
-- And more!
-
-Stay tuned for more content coming soon! 
+Exploring the latest trends and technologies shaping the future of web development... 
