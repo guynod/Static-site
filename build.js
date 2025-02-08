@@ -72,23 +72,14 @@ function formatDate(dateStr) {
 }
 
 function generateBlogContent(posts) {
-    return `<div class="search-view">
-        <div class="search-box">
-            <input type="text" placeholder="Search posts..." class="search-input">
-            <button class="search-button">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </button>
-        </div>
-        <a href="#" class="view-all">View All Posts</a>
-    </div>
-    <div class="blog-grid">
-        ${posts.map(post => {
+    return `<div class="blog-grid">
+        ${posts.map((post, index) => {
             const date = formatDate(post.date);
+            // Use different images for each post using Picsum
+            const imageId = 100 + index; // This ensures each post gets a different image
             return `<article class="blog-post">
                 <a href="${post.url}" class="post-image">
-                    <img src="/images/placeholder.svg" alt="${post.title}" loading="lazy">
+                    <img src="https://picsum.photos/id/${imageId}/800/400" alt="${post.title}" loading="lazy">
                 </a>
                 <div class="post-content">
                     <h2 class="post-title">
